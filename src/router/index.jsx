@@ -53,9 +53,10 @@ export const router = createBrowserRouter([
       }),
       
       // Main app with bottom navigation
+// Main app with bottom navigation
       {
         path: '/',
-element: <Layout />,
+        element: <Layout />,
         children: [
           createRoute({
             path: 'dashboard',
@@ -106,3 +107,18 @@ element: <Layout />,
         element: <ResetPassword />,
         title: 'Reset Password'
       }),
+      createRoute({
+        path: 'prompt-password/:appId/:emailAddress/:provider',
+        element: <PromptPassword />,
+        title: 'Prompt Password'
+      }),
+      
+      // 404 catch-all route
+      createRoute({
+        path: '*',
+        element: <NotFound />,
+        title: 'Page Not Found'
+      })
+    ]
+  }
+])
