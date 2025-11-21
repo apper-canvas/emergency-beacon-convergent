@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react"
-import { toast } from "react-toastify"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import Badge from "@/components/atoms/Badge"
-import Card from "@/components/atoms/Card"
-import Loading from "@/components/ui/Loading"
-import ErrorView from "@/components/ui/ErrorView"
-import Empty from "@/components/ui/Empty"
-import { incidentService } from "@/services/api/incidentService"
-import { formatDistanceToNow, format } from "date-fns"
+import React, { useEffect, useState, useMemo } from "react";
+import { toast } from "react-toastify";
+import { incidentService } from "@/services/api/incidentService";
+import { format, formatDistanceToNow } from "date-fns";
+import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
+import ErrorView from "@/components/ui/ErrorView";
+import Empty from "@/components/ui/Empty";
+import Button from "@/components/atoms/Button";
+import Card from "@/components/atoms/Card";
+import Badge from "@/components/atoms/Badge";
 
 const HistoryPage = () => {
   const [incidents, setIncidents] = useState([])
@@ -48,62 +48,55 @@ const HistoryPage = () => {
     }
   }
 
-  const applyFilters = () => {
+const filteredIncidents = useMemo(() => {
     let filtered = incidents
 
     // Apply status/type/severity filter
     if (activeFilter !== "all") {
       if (activeFilter === "resolved") {
-        filtered = incidents.filter(incident => incident.status === "resolved")
+        filtered = incidents.filter(incident => incident.status_c === "resolved")
       } else if (activeFilter === "critical") {
-        filtered = incidents.filter(incident => incident.severity === "critical")
+        filtered = incidents.filter(incident => incident.severity_c === "critical")
       } else {
-        filtered = incidents.filter(incident => incident.accidentType === activeFilter)
+        filtered = incidents.filter(incident => incident.accident_type_c === activeFilter)
       }
     }
 
     // Apply search filter
-    if (searchTerm.trim()) {
+    if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(incident =>
-        incident.id.toLowerCase().includes(term) ||
-        incident.description?.toLowerCase().includes(term) ||
-        incident.location.address.toLowerCase().includes(term) ||
-        incident.accidentType.toLowerCase().includes(term)
+        incident.Name?.toLowerCase().includes(term) ||
+        incident.description_c?.toLowerCase().includes(term) ||
+        (incident.location_c && 
+          (typeof incident.location_c === 'string' 
+            ? incident.location_c.toLowerCase().includes(term)
+            : JSON.stringify(incident.location_c).toLowerCase().includes(term)
+          )
+        ) ||
+        incident.accident_type_c?.toLowerCase().includes(term)
       )
     }
 
-    setFilteredIncidents(filtered)
-  }
-
-  const handleFilterChange = (filterId) => {
-    setActiveFilter(filterId)
+    return filtered
+  }, [incidents, activeFilter, searchTerm])
+const handleFilterChange = (filter) => {
+    setActiveFilter(filter)
   }
 
   const handleExportData = () => {
-    const dataStr = JSON.stringify(filteredIncidents, null, 2)
-    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr)
-    
-    const exportFileDefaultName = `emergency-incidents-${format(new Date(), "yyyy-MM-dd")}.json`
-    
-    const linkElement = document.createElement("a")
-    linkElement.setAttribute("href", dataUri)
-    linkElement.setAttribute("download", exportFileDefaultName)
-    linkElement.click()
-    
-    toast.success("Incident history exported successfully!")
+    toast.info("Export functionality will be implemented soon")
   }
 
   const handleViewIncident = (incident) => {
-    toast.info(`Viewing details for incident ${incident.id}`)
+    toast.info(`Viewing details for incident ${incident.Name}`)
     // In a real app, this would navigate to incident detail page
   }
-
-  const handleRetry = () => {
+const handleRetry = () => {
     loadIncidentHistory()
   }
 
-  const getSeverityColor = (severity) => {
+const getSeverityColor = (severity) => {
     switch (severity) {
       case "critical":
         return "critical"
@@ -146,19 +139,19 @@ const HistoryPage = () => {
     }
   }
 
-  const getHistoryStats = () => {
+const stats = useMemo(() => {
     return {
       total: incidents.length,
-      resolved: incidents.filter(i => i.status === "resolved").length,
-      critical: incidents.filter(i => i.severity === "critical").length,
+      resolved: incidents.filter(i => i.status_c === "resolved").length,
+      critical: incidents.filter(i => i.severity_c === "critical").length,
       thisWeek: incidents.filter(i => {
-        const incidentDate = new Date(i.timestamp)
+        const incidentDate = new Date(i.CreatedOn)
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
         return incidentDate > weekAgo
       }).length
     }
-  }
+  }, [incidents])
 
   if (loading) return <Loading />
   
@@ -168,9 +161,6 @@ const HistoryPage = () => {
       onRetry={handleRetry}
     />
   )
-
-  const stats = getHistoryStats()
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100 p-4">
       <div className="max-w-6xl mx-auto py-6">
@@ -293,74 +283,87 @@ const HistoryPage = () => {
         ) : (
           <div className="space-y-4">
             {filteredIncidents.map((incident) => (
-              <Card key={incident.Id} className="p-5 hover:shadow-lg transition-shadow duration-200">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
+<Card key={incident.Id} className="p-5 hover:shadow-lg transition-shadow duration-200">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                       <ApperIcon 
-                        name={getAccidentTypeIcon(incident.accidentType)} 
+                        name={getAccidentTypeIcon(incident.accident_type_c)} 
                         size={20} 
-                        className="text-gray-700"
+                        className="text-gray-600"
                       />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-sm font-semibold text-gray-800">
-                          #{incident.id}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-sm font-semibold text-gray-900">
+                          #{incident.Name}
                         </span>
-                        <Badge variant={getSeverityColor(incident.severity)} size="sm">
-                          {incident.severity}
+                        <Badge variant={getSeverityColor(incident.severity_c)} size="sm">
+                          {incident.severity_c}
                         </Badge>
-                        <Badge variant={getStatusColor(incident.status)} size="sm">
-                          {incident.status}
+                        <Badge variant={getStatusColor(incident.status_c)} size="sm">
+                          {incident.status_c}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 capitalize">
-                        {incident.accidentType.replace(/([A-Z])/g, ' $1').trim()} • {incident.victimCount} person{incident.victimCount !== 1 ? 's' : ''}
-                      </p>
                     </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {format(new Date(incident.timestamp), "MMM d, yyyy")}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(incident.timestamp), { addSuffix: true })}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <ApperIcon name="MapPin" size={14} />
-                    <span className="truncate">{incident.location.address}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <ApperIcon name="Clock" size={14} />
-                      <span>{format(new Date(incident.timestamp), "h:mm a")}</span>
+                    <p className="text-sm text-gray-600 capitalize mb-2">
+                      {incident.accident_type_c?.replace(/([A-Z])/g, ' $1').trim()} • {incident.victim_count_c} person{incident.victim_count_c !== 1 ? 's' : ''}
+                    </p>
+                    
+<div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <ApperIcon name="Calendar" size={14} />
+                        {format(new Date(incident.CreatedOn), "MMM d, yyyy")}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(incident.CreatedOn), { addSuffix: true })}
+                      </div>
                     </div>
                     
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <ApperIcon name="Building" size={14} />
-                      <span>{incident.notifiedFacilities?.length || 0} facilities</span>
+                    <div className="flex items-start gap-1 mb-2 text-sm text-gray-600">
+                      <ApperIcon name="MapPin" size={14} />
+                      <span className="truncate">
+                        {incident.location_c ? (
+                          typeof incident.location_c === 'string' 
+                            ? JSON.parse(incident.location_c).address || incident.location_c
+                            : incident.location_c.address || incident.location_c
+                        ) : 'Location not available'}
+                      </span>
                     </div>
+                    
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <ApperIcon name="Clock" size={14} />
+                        <span>{format(new Date(incident.CreatedOn), "h:mm a")}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ApperIcon name="Building" size={14} />
+                        <span>
+                          {incident.notified_facilities_c ? (
+                            typeof incident.notified_facilities_c === 'string' 
+                              ? JSON.parse(incident.notified_facilities_c).length 
+                              : incident.notified_facilities_c.length
+                          ) : 0} facilities
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {incident.description_c && (
+                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 mt-3">
+                        <p className="text-sm text-gray-700 italic">
+                          "{incident.description_c}"
+                        </p>
+                      </div>
+                    )}
                   </div>
-
-                  {incident.description && (
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 mt-3">
-                      <p className="text-sm text-gray-700 italic">
-                        "{incident.description}"
-                      </p>
-                    </div>
-                  )}
                 </div>
-
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+</div>
+                
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                   <div className="text-xs text-gray-500">
-                    Reported at {format(new Date(incident.timestamp), "h:mm a 'on' MMM d, yyyy")}
+                    Reported at {format(new Date(incident.CreatedOn), "h:mm a 'on' MMM d, yyyy")}
                   </div>
                   
                   <Button

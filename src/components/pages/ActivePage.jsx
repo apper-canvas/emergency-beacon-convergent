@@ -1,17 +1,20 @@
-import { useState, useEffect } from "react"
-import { toast } from "react-toastify"
-import ApperIcon from "@/components/ApperIcon"
-import IncidentCard from "@/components/organisms/IncidentCard"
-import Loading from "@/components/ui/Loading"
-import ErrorView from "@/components/ui/ErrorView"
-import Empty from "@/components/ui/Empty"
-import { incidentService } from "@/services/api/incidentService"
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { incidentService } from "@/services/api/incidentService";
+import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
+import ErrorView from "@/components/ui/ErrorView";
+import Empty from "@/components/ui/Empty";
+import Button from "@/components/atoms/Button";
+import Card from "@/components/atoms/Card";
+import IncidentCard from "@/components/organisms/IncidentCard";
 
 const ActivePage = () => {
   const [incidents, setIncidents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState(new Date().toLocaleTimeString())
 
   useEffect(() => {
     loadActiveIncidents()
@@ -24,12 +27,13 @@ const ActivePage = () => {
     return () => clearInterval(refreshInterval)
   }, [])
 
-  const loadActiveIncidents = async () => {
+const loadActiveIncidents = async () => {
     try {
       setLoading(true)
       setError("")
       const data = await incidentService.getActive()
       setIncidents(data || [])
+      setLastUpdate(new Date().toLocaleTimeString())
     } catch (err) {
       console.error("Error loading active incidents:", err)
       setError("Failed to load active emergency incidents. Please check your connection.")
@@ -38,11 +42,12 @@ const ActivePage = () => {
     }
   }
 
-  const refreshActiveIncidents = async () => {
+const refreshActiveIncidents = async () => {
     try {
       setRefreshing(true)
       const data = await incidentService.getActive()
       setIncidents(data || [])
+      setLastUpdate(new Date().toLocaleTimeString())
     } catch (err) {
       console.error("Error refreshing incidents:", err)
     } finally {
@@ -51,128 +56,105 @@ const ActivePage = () => {
   }
 
   const handleViewDetails = (incident) => {
-    toast.info(`Viewing details for incident ${incident.id}`)
-    // In a real app, this would navigate to incident detail page
+toast.info(`Viewing details for incident ${incident.Name}`)
   }
 
-  const handleRetry = () => {
-    loadActiveIncidents()
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "resolved":
+        return "bg-green-100 border-green-300"
+      case "responding":
+        return "bg-amber-100 border-amber-300"
+      case "acknowledged":
+        return "bg-blue-100 border-blue-300"
+      default:
+        return "bg-red-100 border-red-300"
+    }
   }
-
-  if (loading) return <Loading />
-  
-  if (error) return (
-    <ErrorView 
-      error={error}
-      onRetry={handleRetry}
-    />
-  )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4">
-      <div className="max-w-4xl mx-auto py-6">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Active Emergency Incidents
-            </h1>
-            <p className="text-gray-600">
-              Real-time monitoring of ongoing emergency responses
-            </p>
-          </div>
-          
-          <button
-            onClick={refreshActiveIncidents}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors duration-200 disabled:opacity-50"
-          >
-            <ApperIcon 
-              name="RefreshCw" 
-              size={16} 
-              className={refreshing ? "animate-spin" : ""} 
-            />
-            Refresh
-          </button>
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    {/* Header */}
+    <div className="flex items-center gap-3 mb-6">
+        <div
+            className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
+            <ApperIcon name="Activity" size={20} className="text-white" />
         </div>
-
-        {/* Stats Overview */}
-        {incidents.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {incidents.filter(i => i.status === "pending").length}
-              </div>
-              <div className="text-sm text-red-800">Pending Response</div>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {incidents.filter(i => i.status === "acknowledged").length}
-              </div>
-              <div className="text-sm text-blue-800">Acknowledged</div>
-            </div>
-            
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-amber-600">
-                {incidents.filter(i => i.status === "responding").length}
-              </div>
-              <div className="text-sm text-amber-800">En Route</div>
-            </div>
-            
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {incidents.filter(i => i.severity === "critical").length}
-              </div>
-              <div className="text-sm text-purple-800">Critical Level</div>
-            </div>
-          </div>
-        )}
-
-        {/* Auto-refresh indicator */}
-        {refreshing && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6 text-center">
-            <div className="flex items-center justify-center gap-2 text-blue-700">
-              <ApperIcon name="RefreshCw" size={16} className="animate-spin" />
-              <span className="text-sm">Updating incident status...</span>
-            </div>
-          </div>
-        )}
-
-        {/* Incidents List */}
-        {incidents.length === 0 ? (
-          <Empty
-            title="No Active Emergency Incidents"
-            description="Great news! There are currently no active emergency incidents requiring immediate attention."
-            icon="Shield"
-            actionLabel="Create Test Alert"
-            onAction={() => window.location.href = "/"}
-          />
-        ) : (
-          <div className="space-y-4">
-            {incidents.map((incident) => (
-              <IncidentCard
-                key={incident.Id}
-                incident={incident}
-                onViewDetails={handleViewDetails}
-                className="animate-fade-in"
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Footer Info */}
-        <div className="mt-12 bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
-          <div className="flex items-center justify-center gap-2 text-gray-600 text-sm">
-            <ApperIcon name="Info" size={16} />
-            <span>
-              Incident status updates automatically every 30 seconds. Critical alerts are prioritized.
-            </span>
-          </div>
+        <div>
+            <h1 className="text-2xl font-bold text-gray-900">Active Incidents</h1>
+            <p className="text-gray-600">Monitor ongoing emergency situations</p>
         </div>
-      </div>
     </div>
+    {/* Refresh Button */}
+<div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-600">Last updated: {lastUpdate}
+        </div>
+        <Button
+            onClick={refreshActiveIncidents}
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+            className="flex items-center gap-2">
+            <ApperIcon
+                name={refreshing ? "Loader2" : "RefreshCw"}
+                size={16}
+                className={refreshing ? "animate-spin" : ""} />Refresh
+                    </Button>
+    </div>
+    {/* Stats Cards */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card className="p-4 text-center">
+            <div className="text-2xl font-bold text-red-600">
+                {incidents.filter(i => i.status_c === "pending").length}
+            </div>
+            <div className="text-xs text-gray-500">pending</div>
+        </Card>
+        <Card className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">
+                {incidents.filter(i => i.status_c === "acknowledged").length}
+            </div>
+            <div className="text-xs text-gray-500">acknowledged</div>
+        </Card>
+        <Card className="p-4 text-center">
+            <div className="text-2xl font-bold text-amber-600">
+                {incidents.filter(i => i.status_c === "responding").length}
+            </div>
+            <div className="text-xs text-gray-500">responding</div>
+        </Card>
+        <Card className="p-4 text-center">
+            <div className="text-2xl font-bold text-gray-600">
+                {incidents.length}
+            </div>
+            <div className="text-xs text-gray-500">total active</div>
+        </Card>
+    </div>
+    {/* Loading State */}
+    {loading && <div className="flex items-center justify-center py-8">
+        <div className="flex items-center gap-3 text-amber-600">
+            <ApperIcon name="Loader2" size={20} className="animate-spin" />
+            <span>Loading active incidents...</span>
+        </div>
+    </div>}
+{/* Error State */}
+    {error && <ErrorView error="Failed to load active incidents" onRetry={loadActiveIncidents} />}
+    {/* Incidents List */}
+    {!loading && !error && <div className="space-y-4">
+        {incidents.map(incident => <IncidentCard
+            key={incident.Id}
+            incident={incident}
+            onViewDetails={handleViewDetails}
+            className="animate-fade-in" />)}
+    </div>}
+    {/* Footer Info */}
+    <div
+        className="mt-12 bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+        <div className="flex items-center justify-center gap-2 text-gray-600 text-sm">
+            <ApperIcon name="Info" size={16} />
+            <span>Incident status updates automatically every 30 seconds. Critical alerts are prioritized.
+                            </span>
+        </div>
+    </div>
+</div>
   )
 }
 

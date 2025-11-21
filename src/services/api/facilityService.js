@@ -1,13 +1,9 @@
-import facilitiesData from "@/services/mockData/facilities.json"
+import { getApperClient } from "@/services/apperClient"
+import { toast } from "react-toastify"
 
 class FacilityService {
   constructor() {
-    this.facilities = [...facilitiesData]
-  }
-
-  // Simulate API delay
-  delay(ms = 300) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    this.tableName = "facilities_c"
   }
 
   // Calculate distance between two coordinates (Haversine formula)
@@ -28,106 +24,344 @@ class FacilityService {
   }
 
   async getAll() {
-    await this.delay()
-    return this.facilities.map(facility => ({ ...facility }))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "type_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "contact_number_c"}},
+          {"field": {"Name": "distance_c"}},
+          {"field": {"Name": "response_time_c"}},
+          {"field": {"Name": "availability_c"}}
+        ]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching facilities:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async getById(id) {
-    await this.delay()
-    const facility = this.facilities.find(facility => facility.Id === parseInt(id))
-    return facility ? { ...facility } : null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
+
+      const response = await apperClient.getRecordById(this.tableName, id, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "type_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "contact_number_c"}},
+          {"field": {"Name": "distance_c"}},
+          {"field": {"Name": "response_time_c"}},
+          {"field": {"Name": "availability_c"}}
+        ]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        return null
+      }
+
+      return response.data
+    } catch (error) {
+      console.error(`Error fetching facility ${id}:`, error?.response?.data?.message || error)
+      return null
+    }
   }
 
   async getByType(type) {
-    await this.delay()
-    return this.facilities
-      .filter(facility => facility.type === type)
-      .map(facility => ({ ...facility }))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "type_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "contact_number_c"}},
+          {"field": {"Name": "distance_c"}},
+          {"field": {"Name": "response_time_c"}},
+          {"field": {"Name": "availability_c"}}
+        ],
+        where: [{
+          "FieldName": "type_c",
+          "Operator": "EqualTo",
+          "Values": [type],
+          "Include": true
+        }]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching facilities by type:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async getNearby(coordinates, radiusKm = 10) {
-    await this.delay()
-    
-    return this.facilities
-      .map(facility => {
-        const distance = this.calculateDistance(
-          coordinates.latitude,
-          coordinates.longitude,
-          facility.coordinates.latitude,
-          facility.coordinates.longitude
-        )
-        
-        return {
-          ...facility,
-          distance: distance
-        }
-      })
-      .filter(facility => facility.distance <= radiusKm)
-      .sort((a, b) => a.distance - b.distance)
+    try {
+      const allFacilities = await this.getAll()
+      
+      return allFacilities
+        .map(facility => {
+          let facilityCoords
+          try {
+            facilityCoords = typeof facility.coordinates_c === 'string' ? 
+              JSON.parse(facility.coordinates_c) : 
+              facility.coordinates_c
+          } catch (e) {
+            console.warn('Invalid coordinates for facility:', facility.Id)
+            return null
+          }
+
+          if (!facilityCoords || !facilityCoords.latitude || !facilityCoords.longitude) {
+            return null
+          }
+
+          const distance = this.calculateDistance(
+            coordinates.latitude,
+            coordinates.longitude,
+            facilityCoords.latitude,
+            facilityCoords.longitude
+          )
+          
+          return {
+            ...facility,
+            distance: distance
+          }
+        })
+        .filter(facility => facility !== null && facility.distance <= radiusKm)
+        .sort((a, b) => a.distance - b.distance)
+    } catch (error) {
+      console.error("Error fetching nearby facilities:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async getAvailable() {
-    await this.delay()
-    return this.facilities
-      .filter(facility => facility.availability === "available")
-      .map(facility => ({ ...facility }))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "type_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "contact_number_c"}},
+          {"field": {"Name": "distance_c"}},
+          {"field": {"Name": "response_time_c"}},
+          {"field": {"Name": "availability_c"}}
+        ],
+        where: [{
+          "FieldName": "availability_c",
+          "Operator": "EqualTo",
+          "Values": ["available"],
+          "Include": true
+        }]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching available facilities:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async create(facilityData) {
-    await this.delay(400)
-    
-    const newId = Math.max(...this.facilities.map(f => f.Id)) + 1
-    const facilityId = `${facilityData.type.toUpperCase()}-${String(newId).padStart(3, '0')}`
-    
-    const newFacility = {
-      Id: newId,
-      id: facilityId,
-      name: facilityData.name,
-      type: facilityData.type,
-      coordinates: facilityData.coordinates,
-      address: facilityData.address,
-      contactNumber: facilityData.contactNumber,
-      distance: 0,
-      responseTime: facilityData.responseTime || "Unknown",
-      availability: facilityData.availability || "available"
-    }
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
 
-    this.facilities.push(newFacility)
-    return { ...newFacility }
+      const recordData = {
+        Name: facilityData.name,
+        type_c: facilityData.type,
+        coordinates_c: typeof facilityData.coordinates === 'string' ? 
+          facilityData.coordinates : 
+          JSON.stringify(facilityData.coordinates),
+        address_c: facilityData.address,
+        contact_number_c: facilityData.contactNumber,
+        response_time_c: facilityData.responseTime || "Unknown",
+        availability_c: facilityData.availability || "available"
+      }
+
+      if (facilityData.distance !== undefined) {
+        recordData.distance_c = parseFloat(facilityData.distance)
+      }
+
+      const response = await apperClient.createRecord(this.tableName, {
+        records: [recordData]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} records:`, failed)
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`))
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        if (successful.length > 0) {
+          return successful[0].data
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error creating facility:", error?.response?.data?.message || error)
+      return null
+    }
   }
 
   async update(id, updateData) {
-    await this.delay()
-    
-    const index = this.facilities.findIndex(facility => facility.Id === parseInt(id))
-    if (index === -1) return null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
 
-    this.facilities[index] = {
-      ...this.facilities[index],
-      ...updateData
+      const recordData = { Id: parseInt(id) }
+      
+      if (updateData.Name !== undefined) recordData.Name = updateData.Name
+      if (updateData.type_c !== undefined) recordData.type_c = updateData.type_c
+      if (updateData.coordinates_c !== undefined) recordData.coordinates_c = updateData.coordinates_c
+      if (updateData.address_c !== undefined) recordData.address_c = updateData.address_c
+      if (updateData.contact_number_c !== undefined) recordData.contact_number_c = updateData.contact_number_c
+      if (updateData.distance_c !== undefined) recordData.distance_c = parseFloat(updateData.distance_c)
+      if (updateData.response_time_c !== undefined) recordData.response_time_c = updateData.response_time_c
+      if (updateData.availability_c !== undefined) recordData.availability_c = updateData.availability_c
+
+      const response = await apperClient.updateRecord(this.tableName, {
+        records: [recordData]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} records:`, failed)
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`))
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        if (successful.length > 0) {
+          return successful[0].data
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error updating facility:", error?.response?.data?.message || error)
+      return null
     }
-
-    return { ...this.facilities[index] }
   }
 
   async delete(id) {
-    await this.delay()
-    
-    const index = this.facilities.findIndex(facility => facility.Id === parseInt(id))
-    if (index === -1) return false
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return false
+      }
 
-    this.facilities.splice(index, 1)
-    return true
+      const response = await apperClient.deleteRecord(this.tableName, {
+        RecordIds: [parseInt(id)]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return false
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to delete ${failed.length} records:`, failed)
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        return successful.length > 0
+      }
+
+      return false
+    } catch (error) {
+      console.error("Error deleting facility:", error?.response?.data?.message || error)
+      return false
+    }
   }
 
   async updateAvailability(id, availability) {
-    await this.delay()
-    
-    const index = this.facilities.findIndex(facility => facility.Id === parseInt(id))
-    if (index === -1) return null
-
-    this.facilities[index].availability = availability
-    return { ...this.facilities[index] }
+    return this.update(id, { availability_c: availability })
   }
 }
 

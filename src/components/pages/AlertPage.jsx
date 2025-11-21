@@ -1,13 +1,13 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { toast } from "react-toastify"
-import EmergencyButton from "@/components/molecules/EmergencyButton"
-import LocationDisplay from "@/components/molecules/LocationDisplay"
-import SeveritySelector from "@/components/molecules/SeveritySelector"
-import IncidentForm from "@/components/molecules/IncidentForm"
-import AlertConfirmation from "@/components/organisms/AlertConfirmation"
-import { incidentService } from "@/services/api/incidentService"
-import { facilityService } from "@/services/api/facilityService"
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { incidentService } from "@/services/api/incidentService";
+import { facilityService } from "@/services/api/facilityService";
+import AlertConfirmation from "@/components/organisms/AlertConfirmation";
+import EmergencyButton from "@/components/molecules/EmergencyButton";
+import IncidentForm from "@/components/molecules/IncidentForm";
+import LocationDisplay from "@/components/molecules/LocationDisplay";
+import SeveritySelector from "@/components/molecules/SeveritySelector";
 
 const AlertPage = () => {
   const navigate = useNavigate()
@@ -43,16 +43,16 @@ const handleEmergencyAlert = () => {
     setLoading(true)
     
     try {
-      // Get nearby facilities for notification
+// Get nearby facilities for notification
       const nearbyFacilities = await facilityService.getNearby(
         locationData.coordinates, 
         10
       )
       
       const notifiedFacilities = nearbyFacilities
-        .filter(f => f.availability === "available")
+        .filter(f => f.availability_c === "available")
         .slice(0, 5)
-        .map(f => f.id)
+        .map(f => f.Id)
 
       const incidentData = {
         location: {
@@ -64,18 +64,21 @@ const handleEmergencyAlert = () => {
         accidentType: formData.accidentType,
         victimCount: formData.victimCount,
         description: formData.description,
+        photos: formData.photos || [],
+        voiceNotes: formData.voiceNotes || [],
         notifiedFacilities
       }
 
-      const newIncident = await incidentService.create(incidentData)
-      
-      setSubmittedIncident(newIncident)
-      setStep("confirmation")
-      
-      toast.success(
-        `Emergency alert sent successfully! Incident ID: ${newIncident.id}`,
-        { autoClose: 5000 }
-      )
+const newIncident = await incidentService.create(incidentData)
+
+      if (newIncident) {
+        setSubmittedIncident(newIncident)
+        setStep("confirmation")
+        toast.success(
+          `Emergency alert sent successfully! Incident ID: ${newIncident.Name}`,
+          { autoClose: 5000 }
+        )
+      }
 
     } catch (error) {
       console.error("Error submitting emergency alert:", error)

@@ -1,104 +1,343 @@
-import incidentsData from "@/services/mockData/incidents.json"
+import { getApperClient } from "@/services/apperClient"
+import { toast } from "react-toastify"
 
 class IncidentService {
   constructor() {
-    this.incidents = [...incidentsData]
-  }
-
-  // Simulate API delay
-  delay(ms = 300) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    this.tableName = "incidents_c"
   }
 
   async getAll() {
-    await this.delay()
-    // Sort by timestamp descending (most recent first)
-    return this.incidents
-      .map(incident => ({ ...incident }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "location_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "severity_c"}},
+          {"field": {"Name": "accident_type_c"}},
+          {"field": {"Name": "victim_count_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "notified_facilities_c"}},
+          {"field": {"Name": "photos_c"}},
+          {"field": {"Name": "voice_notes_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching incidents:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async getById(id) {
-    await this.delay()
-    const incident = this.incidents.find(incident => incident.Id === parseInt(id))
-    return incident ? { ...incident } : null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
+
+      const response = await apperClient.getRecordById(this.tableName, id, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "location_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "severity_c"}},
+          {"field": {"Name": "accident_type_c"}},
+          {"field": {"Name": "victim_count_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "notified_facilities_c"}},
+          {"field": {"Name": "photos_c"}},
+          {"field": {"Name": "voice_notes_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        return null
+      }
+
+      return response.data
+    } catch (error) {
+      console.error(`Error fetching incident ${id}:`, error?.response?.data?.message || error)
+      return null
+    }
   }
 
   async getActive() {
-    await this.delay()
-    return this.incidents
-      .filter(incident => incident.status !== "resolved")
-      .map(incident => ({ ...incident }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "location_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "severity_c"}},
+          {"field": {"Name": "accident_type_c"}},
+          {"field": {"Name": "victim_count_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "notified_facilities_c"}},
+          {"field": {"Name": "photos_c"}},
+          {"field": {"Name": "voice_notes_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        where: [{
+          "FieldName": "status_c",
+          "Operator": "NotEqualTo",
+          "Values": ["resolved"],
+          "Include": true
+        }],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching active incidents:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async getByStatus(status) {
-    await this.delay()
-    return this.incidents
-      .filter(incident => incident.status === status)
-      .map(incident => ({ ...incident }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "location_c"}},
+          {"field": {"Name": "coordinates_c"}},
+          {"field": {"Name": "severity_c"}},
+          {"field": {"Name": "accident_type_c"}},
+          {"field": {"Name": "victim_count_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "notified_facilities_c"}},
+          {"field": {"Name": "photos_c"}},
+          {"field": {"Name": "voice_notes_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        where: [{
+          "FieldName": "status_c",
+          "Operator": "EqualTo",
+          "Values": [status],
+          "Include": true
+        }],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching incidents by status:", error?.response?.data?.message || error)
+      return []
+    }
   }
 
   async create(incidentData) {
-    await this.delay(500)
-    
-    const newId = Math.max(...this.incidents.map(i => i.Id)) + 1
-    const incidentId = `EMG-${new Date().getFullYear()}-${String(newId).padStart(3, '0')}`
-    
-    const newIncident = {
-      Id: newId,
-      id: incidentId,
-      timestamp: new Date().toISOString(),
-      reporterId: `user-${Math.random().toString(36).substr(2, 9)}`,
-      location: incidentData.location,
-      coordinates: incidentData.coordinates,
-      severity: incidentData.severity,
-      accidentType: incidentData.accidentType,
-      victimCount: incidentData.victimCount,
-      description: incidentData.description || "",
-      status: "pending",
-      notifiedFacilities: incidentData.notifiedFacilities || [],
-      photos: [],
-      voiceNotes: []
-    }
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
 
-    this.incidents.unshift(newIncident)
-    return { ...newIncident }
+      // Prepare data with only Updateable fields
+      const recordData = {
+        Name: `EMG-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+        location_c: typeof incidentData.location === 'string' ? incidentData.location : JSON.stringify(incidentData.location),
+        coordinates_c: typeof incidentData.coordinates === 'string' ? incidentData.coordinates : JSON.stringify(incidentData.coordinates),
+        severity_c: incidentData.severity,
+        accident_type_c: incidentData.accidentType,
+        victim_count_c: parseInt(incidentData.victimCount),
+        status_c: "pending"
+      }
+
+      // Add optional fields if they exist
+      if (incidentData.description) {
+        recordData.description_c = incidentData.description
+      }
+      if (incidentData.notifiedFacilities) {
+        recordData.notified_facilities_c = typeof incidentData.notifiedFacilities === 'string' ? 
+          incidentData.notifiedFacilities : 
+          JSON.stringify(incidentData.notifiedFacilities)
+      }
+      if (incidentData.photos) {
+        recordData.photos_c = incidentData.photos
+      }
+      if (incidentData.voiceNotes) {
+        recordData.voice_notes_c = incidentData.voiceNotes
+      }
+
+      const response = await apperClient.createRecord(this.tableName, {
+        records: [recordData]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} records:`, failed)
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`))
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        if (successful.length > 0) {
+          return successful[0].data
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error creating incident:", error?.response?.data?.message || error)
+      return null
+    }
   }
 
   async update(id, updateData) {
-    await this.delay()
-    
-    const index = this.incidents.findIndex(incident => incident.Id === parseInt(id))
-    if (index === -1) return null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
 
-    this.incidents[index] = {
-      ...this.incidents[index],
-      ...updateData
+      const recordData = { Id: parseInt(id) }
+      
+      // Add only fields that are being updated
+      if (updateData.location_c !== undefined) recordData.location_c = updateData.location_c
+      if (updateData.coordinates_c !== undefined) recordData.coordinates_c = updateData.coordinates_c
+      if (updateData.severity_c !== undefined) recordData.severity_c = updateData.severity_c
+      if (updateData.accident_type_c !== undefined) recordData.accident_type_c = updateData.accident_type_c
+      if (updateData.victim_count_c !== undefined) recordData.victim_count_c = parseInt(updateData.victim_count_c)
+      if (updateData.description_c !== undefined) recordData.description_c = updateData.description_c
+      if (updateData.status_c !== undefined) recordData.status_c = updateData.status_c
+      if (updateData.notified_facilities_c !== undefined) recordData.notified_facilities_c = updateData.notified_facilities_c
+      if (updateData.photos_c !== undefined) recordData.photos_c = updateData.photos_c
+      if (updateData.voice_notes_c !== undefined) recordData.voice_notes_c = updateData.voice_notes_c
+
+      const response = await apperClient.updateRecord(this.tableName, {
+        records: [recordData]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} records:`, failed)
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`))
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        if (successful.length > 0) {
+          return successful[0].data
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error updating incident:", error?.response?.data?.message || error)
+      return null
     }
-
-    return { ...this.incidents[index] }
   }
 
   async delete(id) {
-    await this.delay()
-    
-    const index = this.incidents.findIndex(incident => incident.Id === parseInt(id))
-    if (index === -1) return false
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return false
+      }
 
-    this.incidents.splice(index, 1)
-    return true
+      const response = await apperClient.deleteRecord(this.tableName, {
+        RecordIds: [parseInt(id)]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return false
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to delete ${failed.length} records:`, failed)
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        return successful.length > 0
+      }
+
+      return false
+    } catch (error) {
+      console.error("Error deleting incident:", error?.response?.data?.message || error)
+      return false
+    }
   }
 
   async updateStatus(id, status) {
-    await this.delay()
-    
-    const index = this.incidents.findIndex(incident => incident.Id === parseInt(id))
-    if (index === -1) return null
-
-    this.incidents[index].status = status
-    return { ...this.incidents[index] }
+    return this.update(id, { status_c: status })
   }
 }
 

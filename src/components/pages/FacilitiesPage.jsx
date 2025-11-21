@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react"
-import { toast } from "react-toastify"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import FacilityCard from "@/components/molecules/FacilityCard"
-import Loading from "@/components/ui/Loading"
-import ErrorView from "@/components/ui/ErrorView"
-import Empty from "@/components/ui/Empty"
-import { facilityService } from "@/services/api/facilityService"
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { facilityService } from "@/services/api/facilityService";
+import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
+import ErrorView from "@/components/ui/ErrorView";
+import Empty from "@/components/ui/Empty";
+import Button from "@/components/atoms/Button";
+import Card from "@/components/atoms/Card";
+import FacilityCard from "@/components/molecules/FacilityCard";
 
 const FacilitiesPage = () => {
   const [facilities, setFacilities] = useState([])
@@ -77,11 +78,11 @@ const FacilitiesPage = () => {
     }
   }
 
-  const applyFilters = () => {
+const applyFilters = () => {
     let filtered = facilities
 
     if (activeFilter !== "all") {
-      filtered = facilities.filter(facility => facility.type === activeFilter)
+      filtered = facilities.filter(facility => facility.type_c === activeFilter)
     }
 
     // Sort by distance if available, then by name
@@ -89,18 +90,20 @@ const FacilitiesPage = () => {
       if (a.distance && b.distance) {
         return a.distance - b.distance
       }
-      return a.name.localeCompare(b.name)
+      return a.Name.localeCompare(b.Name)
     })
 
     setFilteredFacilities(filtered)
   }
 
-  const handleFilterChange = (filterId) => {
-    setActiveFilter(filterId)
-  }
-
+// Handle facility contact
   const handleContactFacility = (facility) => {
-    toast.info(`Contacting ${facility.name}`)
+    if (facility.contact_number_c) {
+      window.open(`tel:${facility.contact_number_c}`, '_self')
+      toast.success(`Calling ${facility.Name}...`)
+    } else {
+      toast.info(`Contacting ${facility.Name}`)
+    }
     // In a real app, this would open contact modal or initiate communication
   }
 
@@ -167,78 +170,85 @@ const FacilitiesPage = () => {
             <div className="text-sm text-green-800">Available Now</div>
           </div>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+<div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {facilities.filter(f => f.type === "hospital").length}
+              {facilities.filter(f => f.type_c === "hospital").length}
             </div>
-            <div className="text-sm text-blue-800">Hospitals</div>
+            <div className="text-xs text-gray-500">hospitals</div>
           </div>
           
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {facilities.filter(f => f.type === "police").length}
+              {facilities.filter(f => f.type_c === "police").length}
             </div>
-            <div className="text-sm text-purple-800">Police Stations</div>
+            <div className="text-xs text-gray-500">police stations</div>
           </div>
           
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-amber-600">
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">
               {userLocation ? facilities.filter(f => f.distance && f.distance <= 5).length : "GPS"}
             </div>
-            <div className="text-sm text-amber-800">Within 5km</div>
+            <div className="text-xs text-gray-500">{userLocation ? "within 5km" : "unavailable"}</div>
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          {filterTypes.map((filter) => (
-            <button
+{/* Filter Buttons */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {filterTypes.map(filter => (
+            <Button
               key={filter.id}
-              onClick={() => handleFilterChange(filter.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                activeFilter === filter.id
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-              }`}
+              variant={activeFilter === filter.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveFilter(filter.id)}
+              className="flex items-center gap-2"
             >
               <ApperIcon name={filter.icon} size={16} />
               {filter.label}
-            </button>
+            </Button>
           ))}
         </div>
 
-        {/* Location Status */}
-        {userLocation ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6 text-center">
-            <div className="flex items-center justify-center gap-2 text-blue-700">
-              <ApperIcon name="MapPin" size={16} />
-              <span className="text-sm">Showing facilities sorted by distance from your location</span>
-            </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="flex items-center gap-3 text-gray-600">
+            <ApperIcon name="Loader2" size={20} className="animate-spin" />
+            <span>Loading emergency facilities...</span>
           </div>
-        ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 text-center">
-            <div className="flex items-center justify-center gap-2 text-amber-700">
-              <ApperIcon name="MapPin" size={16} />
-              <span className="text-sm">Enable location access to see nearby facilities first</span>
-            </div>
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Facilities List/Grid */}
-        {filteredFacilities.length === 0 ? (
-          <Empty
-            title="No Facilities Found"
-            description={`No ${activeFilter === "all" ? "emergency facilities" : activeFilter + " facilities"} are currently available in your area.`}
-            icon="Building"
-            actionLabel="View All Facilities"
-            onAction={() => handleFilterChange("all")}
-          />
-        ) : (
-          <div className={
-            viewMode === "grid" 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              : "space-y-4"
-          }>
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+          <ApperIcon name="AlertTriangle" size={24} className="text-red-600 mx-auto mb-2" />
+          <p className="text-red-700 mb-3">Failed to load facilities</p>
+          <Button onClick={loadFacilities} size="sm" variant="outline">
+            Try Again
+          </Button>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredFacilities.length === 0 && (
+        <div className="text-center py-8">
+          <ApperIcon name="Building" size={48} className="text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No facilities found</h3>
+          <p className="text-gray-600 mb-4">
+            {activeFilter === "all" 
+              ? "No emergency facilities are available in your area."
+              : `No ${activeFilter} facilities found.`
+            }
+          </p>
+          <Button onClick={() => setActiveFilter("all")} variant="outline" size="sm">
+            Show all facilities
+          </Button>
+        </div>
+      )}
+
+{/* Facilities List */}
+        {!loading && !error && filteredFacilities.length > 0 && (
+          <div className={`${viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}`}>
             {filteredFacilities.map((facility) => (
               <FacilityCard
                 key={facility.Id}
@@ -249,7 +259,6 @@ const FacilitiesPage = () => {
             ))}
           </div>
         )}
-
         {/* Emergency Contact Info */}
         <div className="mt-12 bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">

@@ -1,15 +1,17 @@
-import { useState } from "react"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import Input from "@/components/atoms/Input"
-import Card from "@/components/atoms/Card"
-import { cn } from "@/utils/cn"
+import React, { useState } from "react";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Input from "@/components/atoms/Input";
+import Card from "@/components/atoms/Card";
+import { cn } from "@/utils/cn";
 
 const IncidentForm = ({ onSubmit, loading, className }) => {
   const [formData, setFormData] = useState({
-    accidentType: "",
+accidentType: "",
     victimCount: 1,
-    description: ""
+    description: "",
+    photos: [],
+    voiceNotes: []
   })
 
   const accidentTypes = [
@@ -54,14 +56,14 @@ const IncidentForm = ({ onSubmit, loading, className }) => {
                 key={type.id}
                 type="button"
                 onClick={() => handleInputChange("accidentType", type.id)}
-                className={cn(
+className={cn(
                   "p-3 rounded-xl border-2 transition-all duration-200 flex items-center gap-2",
                   formData.accidentType === type.id
                     ? "border-red-500 bg-red-50 text-red-700"
-                    : "border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-red-300"
                 )}
               >
-                <ApperIcon name={type.icon} size={16} />
+                <ApperIcon name={type.icon} size={20} className="mb-2" />
                 <span className="text-sm font-medium">{type.label}</span>
               </button>
             ))}
@@ -70,8 +72,8 @@ const IncidentForm = ({ onSubmit, loading, className }) => {
 
         {/* Victim Count */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Number of People Involved
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Number of people affected
           </label>
           <div className="flex items-center gap-3">
             <Button
@@ -80,20 +82,20 @@ const IncidentForm = ({ onSubmit, loading, className }) => {
               size="sm"
               onClick={() => handleInputChange("victimCount", Math.max(1, formData.victimCount - 1))}
               disabled={formData.victimCount <= 1}
-              className="w-10 h-10 p-0"
             >
               <ApperIcon name="Minus" size={16} />
             </Button>
-            <span className="text-2xl font-bold text-gray-900 w-16 text-center">
+            <div className="flex-1 text-center">
+              <span className="text-2xl font-bold text-gray-900">
               {formData.victimCount}
-            </span>
+              </span>
+              <div className="text-xs text-gray-500">person{formData.victimCount !== 1 ? 's' : ''}</div>
+            </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => handleInputChange("victimCount", Math.min(99, formData.victimCount + 1))}
-              disabled={formData.victimCount >= 99}
-              className="w-10 h-10 p-0"
+              onClick={() => handleInputChange("victimCount", formData.victimCount + 1)}
             >
               <ApperIcon name="Plus" size={16} />
             </Button>
@@ -102,25 +104,51 @@ const IncidentForm = ({ onSubmit, loading, className }) => {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Brief Description (Optional)
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            Additional details (optional)
           </label>
           <textarea
+            id="description"
             value={formData.description}
             onChange={(e) => handleInputChange("description", e.target.value)}
-            placeholder="Provide additional details about the emergency..."
+            placeholder="Provide any additional information that might help responders..."
             rows={3}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-colors duration-200"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
           />
         </div>
 
+        {/* File Uploads */}
+        <div className="space-y-4">
+          {/* Photos Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Photos (optional) - up to 5 files
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div id="photos-uploader">
+                {/* ApperFileFieldComponent will be mounted here */}
+              </div>
+            </div>
+          </div>
+
+          {/* Voice Notes Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Voice Notes (optional) - up to 5 files
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div id="voice-notes-uploader">
+                {/* ApperFileFieldComponent will be mounted here */}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Submit Button */}
-        <Button
+<Button
           type="submit"
-          variant="primary"
-          size="lg"
+          className="w-full emergency-button"
           disabled={!formData.accidentType || loading}
-          className="w-full"
         >
           {loading ? (
             <>
