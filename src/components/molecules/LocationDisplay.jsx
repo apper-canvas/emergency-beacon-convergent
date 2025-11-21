@@ -18,7 +18,7 @@ const LocationDisplay = ({ onLocationUpdate, className }) => {
     setLoading(true)
     setError("")
     
-    try {
+try {
       if (!navigator.geolocation) {
         throw new Error("Geolocation is not supported by this browser")
       }
@@ -50,7 +50,30 @@ const LocationDisplay = ({ onLocationUpdate, className }) => {
         })
       }
     } catch (err) {
-      setError("Unable to get location. Please enable GPS and try again.")
+      let errorMessage = "Unable to get location. Please enable GPS and try again."
+      
+      // Check for specific permission policy errors
+      if (err.message?.includes("permissions policy") || 
+          err.message?.includes("Geolocation has been disabled") ||
+          err.code === 1) {
+        errorMessage = "Location access has been disabled by security policy. You can still use emergency alerts by entering your location manually."
+        
+        // Provide a fallback location for emergency use
+        const fallbackLocation = {
+          coordinates: { latitude: 40.7128, longitude: -74.0060 }, // Default to NYC
+          address: "Location unavailable - Manual entry required"
+        }
+        
+        if (onLocationUpdate) {
+          onLocationUpdate(fallbackLocation)
+        }
+      } else if (err.code === 2) {
+        errorMessage = "Location unavailable. Please check your device's location settings."
+      } else if (err.code === 3) {
+        errorMessage = "Location request timed out. Please try again."
+      }
+      
+      setError(errorMessage)
       console.error("Geolocation error:", err)
     } finally {
       setLoading(false)
@@ -89,8 +112,8 @@ const LocationDisplay = ({ onLocationUpdate, className }) => {
         </div>
       )}
 
-      {error && (
-        <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+{error && (
+        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
           <ApperIcon name="AlertTriangle" size={16} />
           <span className="text-sm">{error}</span>
         </div>
