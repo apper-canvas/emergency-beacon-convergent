@@ -1,0 +1,52 @@
+[
+  {
+    "Id": 1,
+    "facilityId": "HOSP-001",
+    "incidentId": "EMG-2024-001",
+    "acknowledgedAt": "2024-01-15T14:32:00Z",
+    "responderId": "EMT-123",
+    "estimatedArrival": "14:40:00",
+    "status": "responding",
+    "notes": "Ambulance dispatched, ETA 8 minutes"
+  },
+  {
+    "Id": 2,
+    "facilityId": "POLICE-001",
+    "incidentId": "EMG-2024-001",
+    "acknowledgedAt": "2024-01-15T14:31:00Z",
+    "responderId": "OFFICER-456",
+    "estimatedArrival": "14:35:00",
+    "status": "responding",
+    "notes": "Patrol unit en route to secure scene"
+  },
+  {
+    "Id": 3,
+    "facilityId": "HOSP-002",
+    "incidentId": "EMG-2024-002",
+    "acknowledgedAt": "2024-01-15T15:46:00Z",
+    "responderId": "EMT-789",
+    "estimatedArrival": "15:55:00",
+    "status": "acknowledged",
+    "notes": "Priority response team being assembled"
+  },
+  {
+    "Id": 4,
+    "facilityId": "FIRE-001",
+    "incidentId": "EMG-2024-003",
+    "acknowledgedAt": "2024-01-15T12:16:00Z",
+    "responderId": "FIRE-321",
+    "estimatedArrival": "12:24:00",
+    "status": "resolved",
+    "notes": "Fire contained and extinguished, no injuries"
+  },
+  {
+    "Id": 5,
+    "facilityId": "POLICE-002",
+    "incidentId": "EMG-2024-004",
+    "acknowledgedAt": "2024-01-15T16:22:00Z",
+    "responderId": "OFFICER-654",
+    "estimatedArrival": "16:30:00",
+    "status": "pending",
+    "notes": "Alert received, dispatching available units"
+  }
+]
