@@ -1,13 +1,13 @@
-import { useState } from "react"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import { cn } from "@/utils/cn"
+import React, { useEffect, useState } from "react";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import { cn } from "@/utils/cn";
 
 const EmergencyButton = ({ onEmergencyAlert, disabled, className }) => {
   const [isPressed, setIsPressed] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
 
-  const handlePress = () => {
+const handlePress = () => {
     if (disabled) return
 
     setIsPressed(true)
@@ -23,9 +23,19 @@ const EmergencyButton = ({ onEmergencyAlert, disabled, className }) => {
       handleConfirm()
     }, 3000)
 
-    // Clean up timer if component unmounts or user confirms manually
-    return () => clearTimeout(confirmTimer)
+    // Store timer reference for cleanup
+    window.emergencyTimer = confirmTimer
   }
+
+  // Clean up timer on component unmount or state change
+  useEffect(() => {
+    return () => {
+      if (window.emergencyTimer) {
+        clearTimeout(window.emergencyTimer)
+        window.emergencyTimer = null
+      }
+    }
+  }, [isConfirming])
 
 const handleConfirm = () => {
     setIsPressed(false)
