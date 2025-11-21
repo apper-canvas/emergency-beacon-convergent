@@ -131,7 +131,7 @@ try {
       )}
 
 {error && (
-        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+        <div className="flex items-center gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
           <ApperIcon name="AlertTriangle" size={16} />
           <span className="text-sm">{error}</span>
         </div>
