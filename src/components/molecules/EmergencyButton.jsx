@@ -27,7 +27,7 @@ const EmergencyButton = ({ onEmergencyAlert, disabled, className }) => {
     return () => clearTimeout(confirmTimer)
   }
 
-  const handleConfirm = () => {
+const handleConfirm = () => {
     setIsPressed(false)
     setIsConfirming(false)
     if (onEmergencyAlert) {

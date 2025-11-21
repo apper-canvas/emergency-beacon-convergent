@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { incidentService } from "@/services/api/incidentService";
 import { facilityService } from "@/services/api/facilityService";
+import ApperIcon from "@/components/ApperIcon";
 import AlertConfirmation from "@/components/organisms/AlertConfirmation";
 import EmergencyButton from "@/components/molecules/EmergencyButton";
 import IncidentForm from "@/components/molecules/IncidentForm";
@@ -14,15 +15,62 @@ const AlertPage = () => {
   const [step, setStep] = useState("emergency") // emergency, severity, details, confirmation
   const [loading, setLoading] = useState(false)
   const [locationData, setLocationData] = useState(null)
-  const [severityData, setSeverityData] = useState(null)
   const [submittedIncident, setSubmittedIncident] = useState(null)
+  const [severityData, setSeverityData] = useState(null)
 
-const handleEmergencyAlert = () => {
+const handleEmergencyAlert = async () => {
     if (!locationData) {
       toast.error("Location data is required for emergency alerts. Please wait for location to load or refresh the page.")
       return
     }
-    setStep("severity")
+    
+    // Send emergency alert directly with default severity and minimal data
+    setLoading(true)
+    
+    try {
+      // Get nearby facilities for notification
+      const nearbyFacilities = await facilityService.getNearby(
+        locationData.coordinates, 
+        10
+      )
+      
+      const notifiedFacilities = nearbyFacilities
+        .filter(f => f.availability_c === "available")
+        .slice(0, 5)
+        .map(f => f.Id)
+
+      const incidentData = {
+        location: {
+          address: locationData.address,
+          coordinates: locationData.coordinates
+        },
+        coordinates: locationData.coordinates,
+        severity: "high", // Default severity for emergency alerts
+        accidentType: "emergency",
+        victimCount: 1,
+        description: "Emergency alert sent via emergency button",
+        photos: [],
+        voiceNotes: [],
+        notifiedFacilities
+      }
+
+      const newIncident = await incidentService.create(incidentData)
+
+      if (newIncident) {
+        setSubmittedIncident(newIncident)
+        setStep("confirmation")
+        toast.success(
+          `Emergency alert sent successfully! Incident ID: ${newIncident.Name}`,
+          { autoClose: 5000 }
+        )
+      }
+
+    } catch (error) {
+      console.error("Error submitting emergency alert:", error)
+      toast.error("Failed to submit emergency alert. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSeveritySelect = (severity) => {
@@ -34,9 +82,9 @@ const handleEmergencyAlert = () => {
     setLocationData(location)
   }
 
-  const handleFormSubmit = async (formData) => {
-    if (!locationData || !severityData) {
-      toast.error("Missing required emergency information")
+const handleFormSubmit = async (formData) => {
+    if (!locationData) {
+      toast.error("Missing required location information")
       return
     }
 
@@ -60,7 +108,7 @@ const handleEmergencyAlert = () => {
           coordinates: locationData.coordinates
         },
         coordinates: locationData.coordinates,
-        severity: severityData.id,
+        severity: "high", // Default severity for emergency alerts
         accidentType: formData.accidentType,
         victimCount: formData.victimCount,
         description: formData.description,
@@ -92,10 +140,9 @@ const newIncident = await incidentService.create(incidentData)
     navigate("/active")
   }
 
-  const handleStartOver = () => {
+const handleStartOver = () => {
     setStep("emergency")
     setLocationData(null)
-    setSeverityData(null)
     setSubmittedIncident(null)
   }
 
@@ -121,8 +168,8 @@ const newIncident = await incidentService.create(incidentData)
 
             <div className="flex justify-center">
               <EmergencyButton
-                onEmergencyAlert={handleEmergencyAlert}
-                disabled={!locationData}
+onEmergencyAlert={handleEmergencyAlert}
+                disabled={!locationData || loading}
               />
             </div>
 
@@ -136,59 +183,21 @@ const newIncident = await incidentService.create(incidentData)
           </div>
         )}
 
-        {step === "severity" && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Emergency Severity Level
-              </h2>
-              <p className="text-gray-600">
-                Select the severity level that best describes this emergency
-              </p>
+{loading && (
+          <div className="space-y-6 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <ApperIcon name="AlertTriangle" size={32} className="text-red-600" />
             </div>
-
-            <SeveritySelector
-              onSeverityChange={handleSeveritySelect}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep("emergency")}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-              >
-                Back
-              </button>
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Sending Emergency Alert...
+            </h2>
+            <p className="text-gray-600">
+              Please wait while we notify emergency services and nearby facilities
+            </p>
           </div>
         )}
 
-        {step === "details" && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Incident Details
-              </h2>
-              <p className="text-gray-600">
-                Provide additional information to help emergency responders
-              </p>
-            </div>
-
-            <IncidentForm
-              onSubmit={handleFormSubmit}
-              loading={loading}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep("severity")}
-                disabled={loading}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-        )}
+)}
 
         {step === "confirmation" && submittedIncident && (
           <div className="space-y-6">
