@@ -197,8 +197,6 @@ onEmergencyAlert={handleEmergencyAlert}
           </div>
         )}
 
-)}
-
         {step === "confirmation" && submittedIncident && (
           <div className="space-y-6">
             <AlertConfirmation
