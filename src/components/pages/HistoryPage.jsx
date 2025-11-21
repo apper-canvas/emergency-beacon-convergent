@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { incidentService } from "@/services/api/incidentService";
 import { format, formatDistanceToNow } from "date-fns";
@@ -12,7 +12,6 @@ import Badge from "@/components/atoms/Badge";
 
 const HistoryPage = () => {
   const [incidents, setIncidents] = useState([])
-  const [filteredIncidents, setFilteredIncidents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [activeFilter, setActiveFilter] = useState("all")
@@ -30,11 +29,7 @@ const HistoryPage = () => {
     loadIncidentHistory()
   }, [])
 
-  useEffect(() => {
-    applyFilters()
-  }, [incidents, activeFilter, searchTerm])
-
-  const loadIncidentHistory = async () => {
+const loadIncidentHistory = async () => {
     try {
       setLoading(true)
       setError("")
@@ -47,7 +42,6 @@ const HistoryPage = () => {
       setLoading(false)
     }
   }
-
 const filteredIncidents = useMemo(() => {
     let filtered = incidents
 
@@ -281,9 +275,9 @@ const stats = useMemo(() => {
             onAction={searchTerm ? () => setSearchTerm("") : () => window.location.href = "/"}
           />
         ) : (
-          <div className="space-y-4">
+<div className="space-y-4">
             {filteredIncidents.map((incident) => (
-<Card key={incident.Id} className="p-5 hover:shadow-lg transition-shadow duration-200">
+              <Card key={incident.Id} className="p-5 hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
@@ -312,7 +306,7 @@ const stats = useMemo(() => {
                       {incident.accident_type_c?.replace(/([A-Z])/g, ' $1').trim()} • {incident.victim_count_c} person{incident.victim_count_c !== 1 ? 's' : ''}
                     </p>
                     
-<div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <ApperIcon name="Calendar" size={14} />
                         {format(new Date(incident.CreatedOn), "MMM d, yyyy")}
@@ -359,7 +353,6 @@ const stats = useMemo(() => {
                     )}
                   </div>
                 </div>
-</div>
                 
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                   <div className="text-xs text-gray-500">
@@ -384,5 +377,4 @@ const stats = useMemo(() => {
     </div>
   )
 }
-
 export default HistoryPage

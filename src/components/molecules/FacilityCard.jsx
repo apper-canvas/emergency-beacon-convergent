@@ -102,6 +102,7 @@ const availabilityStatus = getAvailabilityStatus(facility.availability_c)
             <ApperIcon name="Phone" size={16} className="mr-2" />
             Contact
           </Button>
+        </div>
       </div>
     </Card>
   )
