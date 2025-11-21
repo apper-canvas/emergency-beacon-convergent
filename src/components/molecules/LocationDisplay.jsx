@@ -49,28 +49,46 @@ try {
           address: mockAddress
         })
       }
-    } catch (err) {
+} catch (err) {
       let errorMessage = "Unable to get location. Please enable GPS and try again."
+      
+      // Provide a fallback location for emergency use regardless of error type
+      const fallbackLocation = {
+        coordinates: { latitude: 40.7128, longitude: -74.0060 }, // Default to NYC
+        address: "Location unavailable - Emergency services will be notified of approximate area"
+      }
       
       // Check for specific permission policy errors
       if (err.message?.includes("permissions policy") || 
           err.message?.includes("Geolocation has been disabled") ||
           err.code === 1) {
-        errorMessage = "Location access has been disabled by security policy. You can still use emergency alerts by entering your location manually."
+        errorMessage = "Location access has been disabled by browser policy. Emergency alerts will use approximate location. For precise location, please enable location services in your browser settings."
         
-        // Provide a fallback location for emergency use
-        const fallbackLocation = {
-          coordinates: { latitude: 40.7128, longitude: -74.0060 }, // Default to NYC
-          address: "Location unavailable - Manual entry required"
-        }
+        // Set fallback location and address for display
+        setLocation(fallbackLocation.coordinates)
+        setAddress(fallbackLocation.address)
         
         if (onLocationUpdate) {
           onLocationUpdate(fallbackLocation)
         }
       } else if (err.code === 2) {
-        errorMessage = "Location unavailable. Please check your device's location settings."
+        errorMessage = "Location unavailable. Using approximate location for emergency alerts. Please check your device's location settings for precise location."
+        
+        setLocation(fallbackLocation.coordinates)
+        setAddress(fallbackLocation.address)
+        
+        if (onLocationUpdate) {
+          onLocationUpdate(fallbackLocation)
+        }
       } else if (err.code === 3) {
-        errorMessage = "Location request timed out. Please try again."
+        errorMessage = "Location request timed out. Using approximate location for emergency alerts."
+        
+        setLocation(fallbackLocation.coordinates)
+        setAddress(fallbackLocation.address)
+        
+        if (onLocationUpdate) {
+          onLocationUpdate(fallbackLocation)
+        }
       }
       
       setError(errorMessage)

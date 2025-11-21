@@ -17,9 +17,9 @@ const AlertPage = () => {
   const [severityData, setSeverityData] = useState(null)
   const [submittedIncident, setSubmittedIncident] = useState(null)
 
-  const handleEmergencyAlert = () => {
+const handleEmergencyAlert = () => {
     if (!locationData) {
-      toast.error("Location is required for emergency alerts")
+      toast.error("Location data is required for emergency alerts. Please wait for location to load or refresh the page.")
       return
     }
     setStep("severity")
