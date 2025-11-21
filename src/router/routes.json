@@ -1,4 +1,74 @@
 {
+  "/":{
+    "allow":{
+      "when":{
+        "conditions":[
+          {
+            "label":"Homepage is public",
+            "rule":"public"
+          }
+        ],
+        "operator":"OR"
+      }
+    }
+  },
+  "/dashboard":{
+    "allow":{
+      "when":{
+        "conditions":[
+          {
+            "label":"Dashboard requires authentication",
+            "rule":"authenticated"
+          }
+        ]
+      },
+      "redirectOnDeny":"/login",
+      "excludeRedirectQuery":false
+    }
+  },
+  "/templates":{
+    "allow":{
+      "when":{
+        "conditions":[
+          {
+            "label":"Templates require authentication",
+            "rule":"authenticated"
+          }
+        ]
+      },
+      "redirectOnDeny":"/login",
+      "excludeRedirectQuery":false
+    }
+  },
+  "/work-items":{
+    "allow":{
+      "when":{
+        "conditions":[
+          {
+            "label":"Work items require authentication",
+            "rule":"authenticated"
+          }
+        ]
+      },
+      "redirectOnDeny":"/login",
+      "excludeRedirectQuery":false
+    }
+  },
+  "/profile":{
+    "allow":{
+      "when":{
+        "conditions":[
+          {
+            "label":"Profile requires authentication",
+            "rule":"authenticated"
+          }
+        ]
+      },
+      "redirectOnDeny":"/login",
+      "excludeRedirectQuery":false
+    }
+  },
+  "/login":{
   "/": {
     "allow": {
       "when": {
@@ -122,4 +192,4 @@
       }
     }
   }
-}
+}}

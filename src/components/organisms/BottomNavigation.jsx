@@ -1,73 +1,51 @@
-import { NavLink } from "react-router-dom"
-import ApperIcon from "@/components/ApperIcon"
-import { cn } from "@/utils/cn"
+import { NavLink } from "react-router-dom";
+import React from "react";
+import ApperIcon from "@/components/ApperIcon";
+import { cn } from "@/utils/cn";
 
 const BottomNavigation = () => {
   const navItems = [
     {
-      id: "alert",
-      label: "Alert",
-      icon: "AlertTriangle",
-      path: "",
-      color: "text-red-600"
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: 'LayoutDashboard'
     },
     {
-      id: "active",
-      label: "Active",
-      icon: "Activity", 
-      path: "active",
-      color: "text-blue-600"
+      name: 'Templates',
+      href: '/templates',
+      icon: 'Layout'
     },
     {
-      id: "facilities",
-      label: "Facilities",
-      icon: "Building",
-      path: "facilities",
-      color: "text-green-600"
+      name: 'Work Items',
+      href: '/work-items',
+      icon: 'Briefcase'
     },
     {
-      id: "history",
-      label: "History",
-      icon: "Clock",
-      path: "history",
-      color: "text-purple-600"
+      name: 'Profile',
+      href: '/profile', 
+      icon: 'User'
     }
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 safe-area-pb">
-      <div className="grid grid-cols-4 h-16">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-bottom">
+      <div className="flex justify-around items-center px-4 py-2">
         {navItems.map((item) => (
           <NavLink
-            key={item.id}
-            to={item.path}
-            end={item.path === ""}
-            className={({ isActive }) => cn(
-              "flex flex-col items-center justify-center gap-1 text-xs font-medium transition-all duration-200",
-              isActive 
-                ? `${item.color} scale-110` 
-                : "text-gray-500 hover:text-gray-700"
-            )}
+            key={item.name}
+            to={item.href}
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center p-3 rounded-lg transition-colors min-w-0",
+                isActive
+                  ? "text-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              )
+            }
           >
-            {({ isActive }) => (
-              <>
-                <ApperIcon 
-                  name={item.icon} 
-                  size={20} 
-                  className={cn(
-                    "transition-all duration-200",
-                    isActive && "scale-110"
-                  )}
-                />
-                <span className={cn(
-                  "transition-all duration-200",
-                  isActive && "font-semibold"
-                )}>
-                  {item.label}
-                </span>
-              </>
-            )}
-          </NavLink>
+            <ApperIcon name={item.icon} size={24} className="mb-1" />
+            <span className="text-xs font-medium">{item.name}</span>
+</NavLink>
         ))}
       </div>
     </nav>
