@@ -51,9 +51,8 @@ return (
         <p className="text-gray-600">Your emergency alert has been successfully submitted and emergency services have been notified.</p>
       </div>
       
-      <div className="space-y-4 mb-6">
+<div className="space-y-4 mb-6">
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-<div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
           <div>
             <span className="text-sm font-semibold text-gray-700">Incident ID</span>
             <div className="flex items-center gap-2 mt-1">
